@@ -1,14 +1,17 @@
+from unicodedata import category
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 
+from goods.models import Categories
+
 # Create your views here.
 def index(request):
-    context = {\
+
+    categories = Categories.objects.all()
+    context = {
         'title': 'Home - Главная',
         'content': 'Главная страница магазина Siko',
-        'list': ['first', 'second'],
-        'dict': {'first': 1},
-        'bool': False
+        'categories': categories
                }
 
     return render(request, 'main/index.html', context)
