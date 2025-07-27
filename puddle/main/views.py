@@ -4,7 +4,7 @@ from django.shortcuts import render
 # Create your views here.
 def index(request):
     context = {\
-        'title': 'Home',
+        'title': 'Home - Главная',
         'content': 'Главная страница магазина Siko',
         'list': ['first', 'second'],
         'dict': {'first': 1},
@@ -14,4 +14,11 @@ def index(request):
     return render(request, 'main/index.html', context)
 
 def about(request):
-    return HttpResponse('About page')
+    context = {
+        'title': 'Home - О нас',
+        'content': 'О нас',
+        'text_on_page': 'Текст про магазин и его крутость.'
+        
+               }
+
+    return render(request, 'main/about.html', context)
