@@ -16,5 +16,12 @@ def catalog(requset):
     return render(requset, "goods/catalog.html", content)
 
 
-def product(requset):
-    return render(requset, "goods/product.html")
+def product(requset, product_slug):
+
+    product = Products.objects.get(slug=product_slug)
+
+    context = {
+        'product': product,
+    }
+
+    return render(requset, "goods/product.html", context)
