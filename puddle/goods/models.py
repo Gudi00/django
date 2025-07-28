@@ -14,7 +14,7 @@ class Categories(models.Model):
 
     def __str__(self):
         return self.name
-
+ 
 
 class Products(models.Model):
     name = models.CharField(max_length=150, unique=True, verbose_name='Название')
@@ -40,12 +40,12 @@ class Products(models.Model):
     #     return reverse("catalog:product", kwargs={"product_slug": self.slug})
     
 
-    # def display_id(self):
-    #     return f"{self.id:05}"
+    def display_id(self):
+        return f"{self.id:05}"
 
 
-    # def sell_price(self):
-    #     if self.discount:
-    #         return round(self.price - self.price*self.discount/100, 2)
+    def sell_price(self):
+        if self.discount:
+            return round(self.price - self.price*self.discount/100, 2)
         
-    #     return self.price
+        return self.price
