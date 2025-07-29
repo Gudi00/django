@@ -8,7 +8,6 @@ from goods.models import Categories
 def index(request):
 
     categories = Categories.objects.all()
-    print(categories)
     context = {
         'title': 'Home - Главная',
         'content': 'Главная страница магазина Siko',
