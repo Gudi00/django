@@ -23,22 +23,22 @@ def q_search(query):
         .order_by("-rank")
     )
 
-    # result = result.annotate(
-    #     headline=SearchHeadline(
-    #         "name",
-    #         query,
-    #         start_sel='<span style="background-color: yellow;">',
-    #         stop_sel="</span>",
-    #     )
-    # )
-    # result = result.annotate(
-    #     bodyline=SearchHeadline(
-    #         "description",
-    #         query,
-    #         start_sel='<span style="background-color: yellow;">',
-    #         stop_sel="</span>",
-    #     )
-    # )
+    result = result.annotate(
+        headline=SearchHeadline(
+            "name",
+            query,
+            start_sel='<span style="background-color: yellow;">',
+            stop_sel="</span>",
+        )
+    )
+    result = result.annotate(
+        bodyline=SearchHeadline(
+            "description",
+            query,
+            start_sel='<span style="background-color: yellow;">',
+            stop_sel="</span>",
+        )
+    )
     return result
 
 
