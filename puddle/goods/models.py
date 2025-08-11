@@ -36,8 +36,8 @@ class Products(models.Model):
     def __str__(self):
         return f'{self.name} Количество - {self.quantity}'
 
-    # def get_absolute_url(self):
-    #     return reverse("catalog:product", kwargs={"product_slug": self.slug})
+    def get_absolute_url(self):
+        return reverse("catalog:product", kwargs={"product_slug": self.slug})
     
 
     def display_id(self):
