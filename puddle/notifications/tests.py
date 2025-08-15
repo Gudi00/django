@@ -347,3 +347,133 @@
 #                     task.get()
 
 #                 self.assertIn('Ошибка в send_daily_discounts: SMTP Error', caplog.text)
+
+# # notifications/tests.py
+# import logging
+# from unittest.mock import patch
+# from django.test import TestCase, override_settings
+# from django.core.mail import get_connection
+# from django.contrib.auth.models import User, Group, Permission
+# from goods.models import Products, Categories
+# from notifications.tasks import send_daily_discounts
+# from notifications.models import Subscription
+# from django.conf import settings
+# from django.utils import timezone
+# from datetime import timedelta
+# import pytest
+
+# logger = logging.getLogger('notifications.tasks')
+
+# @pytest.mark.django_db
+# class NotificationTasksTests(TestCase):
+#     def setUp(self):
+#         """Set up test data and environment."""
+#         settings.EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+#         self.connection = get_connection()
+#         self.outbox = self.connection.get_outbox()
+#         self.outbox.clear()
+
+#         # Create groups and permissions
+#         client_group = Group.objects.create(name='Client')
+#         manager_group = Group.objects.create(name='Manager')
+#         content_editor_group = Group.objects.create(name='ContentEditor')
+#         admin_group = Group.objects.create(name='Administrator')
+#         support_group = Group.objects.create(name='Support')
+
+#         # Assign permissions (simplified for testing)
+#         product_ct = ContentType.objects.get_for_model(Products)
+#         client_group.permissions.add(
+#             Permission.objects.get(content_type=product_ct, codename='view_product')
+#         )
+#         manager_group.permissions.add(
+#             Permission.objects.get(content_type=product_ct, codename='add_product'),
+#             Permission.objects.get(content_type=product_ct, codename='change_product')
+#         )
+#         content_editor_group.permissions.add(
+#             Permission.objects.get(content_type=product_ct, codename='change_product')
+#         )
+#         admin_group.permissions.set(Permission.objects.all())
+#         support_group.permissions.add(
+#             Permission.objects.get(content_type=Order, codename='view_order')
+#         )
+
+#         # Create category
+#         self.category = Categories.objects.create(name='Furniture', slug='furniture')
+
+#         # Create products
+#         self.product1 = Products.objects.create(
+#             name='Test Sofa',
+#             slug='test-sofa',
+#             description='Comfortable sofa with discount',
+#             price=1000.00,
+#             discount=20.00,
+#             quantity=10,
+#             category=self.category
+#         )
+
+#         # Create users and subscriptions
+#         self.user1 = User.objects.create_user(
+#             username='user1', email='user1@example.com', first_name='John', is_active=True
+#         )
+#         Subscription.objects.create(user=self.user1, is_subscribed=True)
+#         self.user1.groups.add(client_group)
+
+#         self.user2 = User.objects.create_user(
+#             username='manager1', email='manager1@example.com', first_name='Jane', is_active=True
+#         )
+#         Subscription.objects.create(user=self.user2, is_subscribed=True)
+#         self.user2.groups.add(manager_group)
+
+#     def test_send_daily_discounts_success(self):
+#         """Test successful sending of daily discount emails."""
+#         with override_settings(DEBUG=False, BASE_URL='http://localhost:8000'):
+#             result = send_daily_discounts.delay().get()
+
+#             self.assertEqual(result, 'Sent discount emails to 2 users')
+#             self.assertEqual(len(self.outbox), 2)
+#             self.assertEqual(self.outbox[0].subject, 'Daily Discounts on Furniture')
+#             self.assertEqual(self.outbox[0].to, ['user1@example.com'])
+#             self.assertIn('Test Sofa', self.outbox[0].alternatives[0][0])
+#             self.assertIn('http://localhost:8000/catalog/product/test-sofa/', self.outbox[0].alternatives[0][0])
+
+#     def test_send_daily_discounts_no_subscribers(self):
+#         """Test sending discounts with no subscribed users."""
+#         Subscription.objects.filter(is_subscribed=True).update(is_subscribed=False)
+#         result = send_daily_discounts.delay().get()
+
+#         self.assertEqual(result, 'No subscribed users')
+#         self.assertEqual(len(self.outbox), 0)
+
+#     def test_send_daily_discounts_no_discounts(self):
+#         """Test sending discounts with no discounted products."""
+#         Products.objects.filter(discount__gt=0).update(discount=0)
+#         result = send_daily_discounts.delay().get()
+
+#         self.assertEqual(result, 'No discounted products available')
+#         self.assertEqual(len(self.outbox), 0)
+
+#     def test_send_daily_discounts_debug_mode(self):
+#         """Test simulating discount emails in DEBUG mode."""
+#         with override_settings(DEBUG=True):
+#             with self.assertLogs('notifications.tasks', level='INFO') as cm:
+#                 result = send_daily_discounts.delay().get()
+
+#                 self.assertEqual(result, 'Simulated sending to 2 users')
+#                 self.assertEqual(len(self.outbox), 0)
+#                 self.assertIn('DEBUG=True: Simulating sending 2 discount emails', cm.output[0])
+
+#     def test_group_permissions(self):
+#         """Test group permissions for different roles."""
+#         client = self.user1
+#         manager = self.user2
+
+#         # Client permissions
+#         self.assertTrue(client.has_perm('goods.view_product'))
+#         self.assertFalse(client.has_perm('goods.change_product'))
+#         self.assertTrue(client.has_perm('orders.add_order'))
+#         self.assertTrue(client.has_perm('carts.add_cart'))
+
+#         # Manager permissions
+#         self.assertTrue(manager.has_perm('goods.add_product'))
+#         self.assertTrue(manager.has_perm('goods.change_product'))
+#         self.assertFalse(manager.has_perm('auth.delete_user'))
