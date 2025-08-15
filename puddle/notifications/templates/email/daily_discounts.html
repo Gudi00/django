@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ежедневные скидки</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header { text-align: center; padding: 20px; background-color: #007bff; color: #ffffff; border-radius: 8px 8px 0 0; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .content { padding: 20px; }
+        .discount-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .discount-table th, .discount-table td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        .discount-table th { background-color: #f8f9fa; font-weight: bold; }
+        .product-image { width: 80px; height: auto; border-radius: 4px; }
+        .buy-button { display: inline-block; padding: 10px 20px; background-color: #28a745; color: #ffffff; text-decoration: none; border-radius: 4px; font-size: 14px; }
+        .buy-button:hover { background-color: #218838; }
+        .footer { text-align: center; padding: 20px; color: #6c757d; font-size: 12px; }
+        .unsubscribe { color: #6c757d; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Привет, {{ user.first_name|default:"Покупатель" }}! Ежедневные скидки на мебель</h1>
+        </div>
+        <div class="content">
+            <p>Не упусти наши лучшие предложения! Вот товары со скидками:</p>
+            <table class="discount-table">
+                <tr>
+                    <th>Товар</th>
+                    <th>Изображение</th>
+                    <th>Цена</th>
+                    <th>Скидка</th>
+                    <th></th>
+                </tr>
+                {% for product in products %}
+                <tr>
+                    <td>
+                        {{ product.name }}<br>
+                        <small>{{ product.description|truncatewords:15 }}</small><br>
+                        <small>Категория: {{ product.category.name }}</small>
+                    </td>
+                    <td>
+                        {% if product.image %}
+                        <img src="{{ base_url }}{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                        {% else %}
+                        <span>Нет изображения</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <s>{{ product.price }} руб.</s><br>
+                        <strong>{{ product.sell_price }} руб.</strong>
+                    </td>
+                    <td>{{ product.discount }}%</td>
+                    <td><a href="{{ base_url }}{{ product.get_absolute_url }}" class="buy-button">Купить</a></td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="footer">
+            <p>Не хотите получать рассылки? <a href="{{ base_url }}{% url 'unsubscribe' user.id %}" class="unsubscribe">Отписаться</a></p>
+            <p>&copy; {{ year }} Puddle. Все права защищены.</p>
+        </div>
+    </div>
+</body>
+</html>

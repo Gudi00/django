@@ -9,18 +9,20 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+
 # Celery settings
 # Celery settings
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_ACCEPT_CONTENT = ['application/json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Europe/Moscow'
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "Europe/Moscow"
 
 # Celery Beat: расписание задач
 
 
+import os
 from pathlib import Path
 
 from django.conf.global_settings import (
@@ -29,41 +31,85 @@ from django.conf.global_settings import (
     MEDIA_ROOT,
     MEDIA_URL,
     STATICFILES_DIRS,
-    EMAIL_BACKEND
+    EMAIL_BACKEND,
 )
 
 from decouple import config  # Импорт для .env
 
 # Email настройки для Gmail SMTP
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Default SMTP backend
-EMAIL_HOST = 'smtp.gmail.com'  # Gmail SMTP хост
+EMAIL_HOST = "smtp.gmail.com"  # Gmail SMTP хост
 EMAIL_PORT = 587  # Рекомендуемый порт для TLS
 EMAIL_USE_TLS = True  # Включаем TLS для безопасности
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')  # Из .env
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')  # Из .env
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")  # Из .env
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")  # Из .env
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-
 CELERY_BEAT_SCHEDULE = {
-    'send-daily-notifications': {  # Твоя предыдущая задача
-        'task': 'notifications.tasks.send_daily_notifications',
-        'schedule': {'type': 'crontab', 'hour': 12, 'minute': 0},
+    "send-daily-notifications": {  # Твоя предыдущая задача
+        "task": "notifications.tasks.send_daily_notifications",
+        "schedule": {"type": "crontab", "hour": 12, "minute": 0},
     },
-    'generate-daily-report': {
-        'task': 'reports.tasks.generate_daily_report',
-        'schedule': {'type': 'crontab', 'hour': 20, 'minute': 22},  # Полночь
+    "generate-daily-report": {
+        "task": "reports.tasks.generate_daily_report",
+        "schedule": {"type": "crontab", "hour": 20, "minute": 22},  # Полночь
     },
-    'cleanup-abandoned-carts': {
-        'task': 'reports.tasks.cleanup_abandoned_carts',
-        'schedule': {'type': 'crontab', 'hour': 1, 'minute': 0},  # 01:00, чтобы не конфликтовать
+    "cleanup-abandoned-carts": {
+        "task": "reports.tasks.cleanup_abandoned_carts",
+        "schedule": {
+            "type": "crontab",
+            "hour": 1,
+            "minute": 0,
+        },  # 01:00, чтобы не конфликтовать
+    },
+    "send-daily-discounts": {
+        "task": "notifications.tasks.send_daily_discounts",
+        "schedule": {"type": "crontab", "hour": 9, "minute": 0},  # Каждый день в 9:00
     },
 }
 # {'type': 'crontab', 'minute': '*/5'}
-
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+# puddle/puddle/settings.py
+# ... существующие настройки ...
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOG_DIR, 'celery.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'loggers': {
+        'notifications.tasks': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+# Тестовые настройки
+TEST_RUNNER = "django.test.runner.DiscoverRunner"
+CELERY_TASK_ALWAYS_EAGER = True  # Выполнять задачи синхронно в тестах
+CELERY_TASK_EAGER_PROPAGATES = True  # Пропагировать исключения
+# EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"  # Использовать in-memory бэкенд для тестов
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -72,9 +118,9 @@ CELERY_BEAT_SCHEDULE = {
 SECRET_KEY = "django-insecure-emj&7l^8)45(-wh=zb2(x@rotchp-0s%!h_j$qm7i)u#c#lroo"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
-DEBUG = False
-
+DEBUG = True
+# DEBUG = False
+BASE_URL = "http://localhost:8000/some"
 ALLOWED_HOSTS = ["*"]
 
 
@@ -88,16 +134,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
-
-   
-    
+    "django_celery_beat",
     "main",
     "goods",
     "users",
     "carts",
     "orders",
     "notifications",
-
 ]
 
 MIDDLEWARE = [
@@ -202,4 +245,4 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 LOGIN_URL = "user/login/"
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = "/"
