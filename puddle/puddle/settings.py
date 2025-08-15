@@ -9,6 +9,17 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+# Celery settings
+# Celery settings
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Moscow'
+
+# Celery Beat: расписание задач
+
 
 from pathlib import Path
 
@@ -18,10 +29,40 @@ from django.conf.global_settings import (
     MEDIA_ROOT,
     MEDIA_URL,
     STATICFILES_DIRS,
+    EMAIL_BACKEND
 )
+
+from decouple import config  # Импорт для .env
+
+# Email настройки для Gmail SMTP
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Default SMTP backend
+EMAIL_HOST = 'smtp.gmail.com'  # Gmail SMTP хост
+EMAIL_PORT = 587  # Рекомендуемый порт для TLS
+EMAIL_USE_TLS = True  # Включаем TLS для безопасности
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')  # Из .env
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')  # Из .env
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+
+CELERY_BEAT_SCHEDULE = {
+    'send-daily-notifications': {  # Твоя предыдущая задача
+        'task': 'notifications.tasks.send_daily_notifications',
+        'schedule': {'type': 'crontab', 'hour': 12, 'minute': 0},
+    },
+    'generate-daily-report': {
+        'task': 'reports.tasks.generate_daily_report',
+        'schedule': {'type': 'crontab', 'hour': 20, 'minute': 22},  # Полночь
+    },
+    'cleanup-abandoned-carts': {
+        'task': 'reports.tasks.cleanup_abandoned_carts',
+        'schedule': {'type': 'crontab', 'hour': 1, 'minute': 0},  # 01:00, чтобы не конфликтовать
+    },
+}
+# {'type': 'crontab', 'minute': '*/5'}
 
 
 # Quick-start development settings - unsuitable for production
@@ -31,7 +72,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-emj&7l^8)45(-wh=zb2(x@rotchp-0s%!h_j$qm7i)u#c#lroo"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -46,12 +88,16 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
+
+   
     
     "main",
     "goods",
     "users",
     "carts",
     "orders",
+    "notifications",
+
 ]
 
 MIDDLEWARE = [
@@ -126,7 +172,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
 
 TIME_ZONE = "UTC"
 
