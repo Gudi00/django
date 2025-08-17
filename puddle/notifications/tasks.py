@@ -64,11 +64,13 @@ def send_daily_notifications(self):
         logger.error(f"Ошибка в send_daily_notifications: {exc}", exc_info=True)
         self.retry(exc=exc, countdown=300)
 
+
+TIME_FOR_ABANDONED = 30
 @shared_task(bind=True, max_retries=3, retry_backoff=True)
 def cleanup_abandoned_carts(self):
     """Удаляет корзины, созданные более 30 дней назад."""
     try:
-        one_month_ago = timezone.now() - timedelta(days=30)
+        one_month_ago = timezone.now() - timedelta(days=TIME_FOR_ABANDONED)
         abandoned_carts = Cart.objects.filter(created_timestamp__lt=one_month_ago)
         count = abandoned_carts.count()
         if count == 0:

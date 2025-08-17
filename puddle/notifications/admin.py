@@ -1,8 +1,8 @@
-# # notifications/admin.py
-# from django.contrib import admin
-# from django.db.models import Count
-# from goods.models import Products
-# from orders.models import Order, OrderItem
+# notifications/admin.py
+from django.contrib import admin
+from django.db.models import Count
+from goods.models import Products
+from orders.models import Order, OrderItem
 
 # @admin.register(Products)
 # class ProductAdmin(admin.ModelAdmin):

@@ -1,16 +1,22 @@
+# users/admin.py
 from django.contrib import admin
-from carts.admin import CartTabAdmin
-from orders.admin import OrderTabulareAdmin
-
+from django.contrib.auth.admin import UserAdmin
 from users.models import User
-
-# admin.site.register(User)
+from orders.admin import OrderItemInline
 
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ["username", "first_name", "last_name", "email",]
-    search_fields = ["username", "first_name", "last_name", "email",]
-
-    
-
-    inlines = [CartTabAdmin, OrderTabulareAdmin]
+class CustomUserAdmin(UserAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', 'phone_number')
+    list_filter = ('groups',)
+    search_fields = ('username', 'email')
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'phone_number', 'image')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+    )
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'password1', 'password2', 'phone_number', 'image'),
+        }),
+    )

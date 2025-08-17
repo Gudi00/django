@@ -1,70 +1,32 @@
+# orders/admin.py
 from django.contrib import admin
-
 from orders.models import Order, OrderItem
 
-# admin.site.register(Order)
-# admin.site.register(OrderItem)
-
-class OrderItemTabulareAdmin(admin.TabularInline):
+class OrderItemInline(admin.TabularInline):
     model = OrderItem
-    fields = "product", "name", "price", "quantity"
-    search_fields = (
-        "product",
-        "name",
-    )
-    extra = 0
-
-
-@admin.register(OrderItem)
-class OrderItemAdmin(admin.ModelAdmin):
-    list_display = "order", "product", "name", "price", "quantity"
-    search_fields = (
-        "order",
-        "product",
-        "name",
-    )
-
-
-class OrderTabulareAdmin(admin.TabularInline):
-    model = Order
-    fields = (
-        "requires_delivery",
-        "status",
-        "payment_on_get",
-        "is_paid",
-        "created_timestamp",
-    )
-
-    search_fields = (
-        "requires_delivery",
-        "payment_on_get",
-        "is_paid",
-        "created_timestamp",
-    )
-    readonly_fields = ("created_timestamp",)
-    extra = 0
-
+    extra = 1
+    fields = ('product', 'name', 'price', 'quantity')
+    readonly_fields = ('name', 'price')
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "user",
-        "requires_delivery",
-        "status",
-        "payment_on_get",
-        "is_paid",
-        "created_timestamp",
-    )
+    list_display = ('id', 'user', 'created_timestamp', 'status', 'total_price')
+    list_filter = ('status',)
+    search_fields = ('user__username',)
+    inlines = [OrderItemInline]
 
-    search_fields = (
-        "id",
-    )
-    readonly_fields = ("created_timestamp",)
-    list_filter = (
-        "requires_delivery",
-        "status",
-        "payment_on_get",
-        "is_paid",
-    )
-    inlines = (OrderItemTabulareAdmin,)
+    def total_price(self, obj):
+        return obj.orderitem_set.total_price()
+    total_price.short_description = 'Total Price'
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.groups.filter(name='Support').exists():
+            return qs  # Support can only view
+        return qs
+
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = ('order', 'product', 'name', 'price', 'quantity')
+    list_filter = ('order',)
+    search_fields = ('name',)
