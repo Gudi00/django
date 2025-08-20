@@ -1,4 +1,3 @@
-# orders/admin.py
 from django.contrib import admin
 from orders.models import Order, OrderItem
 
@@ -22,7 +21,7 @@ class OrderAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.groups.filter(name='Support').exists():
-            return qs  # Support can only view
+            return qs
         return qs
 
 @admin.register(OrderItem)

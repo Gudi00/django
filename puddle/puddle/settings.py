@@ -10,14 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-# Celery settings
-# Celery settings
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
-CELERY_ACCEPT_CONTENT = ["application/json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
-CELERY_TIMEZONE = "Europe/Moscow"
+
 
 # Celery Beat: расписание задач
 
@@ -41,13 +34,21 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Default SMTP ba
 EMAIL_HOST = "smtp.gmail.com"  # Gmail SMTP хост
 EMAIL_PORT = 587  # Рекомендуемый порт для TLS
 EMAIL_USE_TLS = True  # Включаем TLS для безопасности
-EMAIL_HOST_USER = config("EMAIL_HOST_USER")  # Из .env
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")  # Из .env
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Celery settings
+# Celery settings
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "Europe/Moscow"
 
 CELERY_BEAT_SCHEDULE = {
     "send-daily-notifications": {  # Твоя предыдущая задача
@@ -115,13 +116,13 @@ CELERY_TASK_EAGER_PROPAGATES = True  # Пропагировать исключе
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-emj&7l^8)45(-wh=zb2(x@rotchp-0s%!h_j$qm7i)u#c#lroo"
+SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 # DEBUG = False
-BASE_URL = "http://localhost:8000/some"
-ALLOWED_HOSTS = ["*"]
+BASE_URL = "http://localhost:8000"
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 
 # Application definition
@@ -135,6 +136,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",
     "django_celery_beat",
+    
     "main",
     "goods",
     "users",
