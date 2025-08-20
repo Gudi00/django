@@ -477,3 +477,29 @@
 #         self.assertTrue(manager.has_perm('goods.add_product'))
 #         self.assertTrue(manager.has_perm('goods.change_product'))
 #         self.assertFalse(manager.has_perm('auth.delete_user'))
+
+
+
+
+
+
+
+# def test_send_order_confirmation(self):
+#     order = Order.objects.create(
+#         user=self.user1,
+#         phone_number='1234567890',
+#         created_timestamp=timezone.now()
+#     )
+#     OrderItem.objects.create(
+#         order=order,
+#         product=self.product1,
+#         name=self.product1.name,
+#         price=self.product1.sell_price(),
+#         quantity=1
+#     )
+#     with override_settings(DEBUG=False):
+#         result = send_order_confirmation.delay(order.id, self.user1.id).get()
+#         self.assertEqual(result, f"Письмо отправлено для заказа {order.id}")
+#         self.assertEqual(len(self.outbox), 1)
+#         self.assertEqual(self.outbox[0].subject, f'Подтверждение заказа #{order.id}')
+#         self.assertIn(f'Детали заказа #{order.id}', self.outbox[0].alternatives[0][0])

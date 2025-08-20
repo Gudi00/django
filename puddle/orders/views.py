@@ -11,7 +11,7 @@ from carts.models import Cart
 
 from orders.forms import CreateOrderForm
 from orders.models import Order, OrderItem
-
+from notifications.tasks import send_order_confirmation
 
 class CreateOrderView(LoginRequiredMixin, FormView):
     template_name = 'orders/create_order.html'
@@ -63,7 +63,8 @@ class CreateOrderView(LoginRequiredMixin, FormView):
 
                     # Очистить корзину пользователя после создания заказа
                     cart_items.delete()
-
+                    send_order_confirmation.delay(order.id, user.id)
+                    
                     messages.success(self.request, 'Заказ оформлен!')
                     return redirect('user:profile')
         except ValidationError as e:
