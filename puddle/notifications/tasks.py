@@ -25,26 +25,25 @@ logger = get_task_logger(__name__)
 # Константы
 BATCH_SIZE = 100
 DELAY_BETWEEN_BATCHES = 2
-DEFAULT_FROM_EMAIL = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@yourdomain.com')
-ADMIN_EMAIL = getattr(settings, 'ADMIN_EMAIL', 'admin@yourdomain.com')
+DEFAULT_FROM_EMAIL = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@gmail.com')
+ADMIN_EMAIL = getattr(settings, 'ADMIN_EMAIL', 'gudiniboy@gmail.com')
 
 @shared_task(bind=True, max_retries=3, retry_backoff=True)
 def send_daily_notifications(self):
-    """Отправляет ежедневные уведомления активным подписанным пользователям."""
+    """Отправляет ежедневные уведомления подписанным пользователям."""
     try:
         users = User.objects.filter(
             is_active=True,
             email__isnull=False,
-            subscription__is_subscribed=True
         ).select_related('subscription')
         num_users = users.count()
         if not num_users:
-            logger.info("Нет активных подписанных пользователей с email")
+            logger.info("Нет пользователей с email")
             return "Нет пользователей для отправки"
 
         messages = [
             (
-                'Ежедневное уведомление от Puddle',
+                'Ежедневное уведомление от Home',
                 "Привет! Сегодня акция на мебель - скидка 20%!",
                 DEFAULT_FROM_EMAIL,
                 [user.email]
@@ -58,7 +57,7 @@ def send_daily_notifications(self):
 
         sent = send_mass_mail(messages, fail_silently=False)
         logger.info(f"Отправлено {sent} уведомлений")
-        return f"Уведомления отправлены {sent} пользователям"
+        return f"Реальные уведомления отправлены {sent} пользователям"
 
     except Exception as exc:
         logger.error(f"Ошибка в send_daily_notifications: {exc}", exc_info=True)
@@ -68,6 +67,7 @@ def send_daily_notifications(self):
 TIME_FOR_ABANDONED = 30
 @shared_task(bind=True, max_retries=3, retry_backoff=True)
 def cleanup_abandoned_carts(self):
+    
     """Удаляет корзины, созданные более 30 дней назад."""
     try:
         one_month_ago = timezone.now() - timedelta(days=TIME_FOR_ABANDONED)
@@ -87,6 +87,7 @@ def cleanup_abandoned_carts(self):
 
 @shared_task(bind=True, max_retries=3, retry_backoff=True)
 def generate_daily_report(self):
+    print('generate_daily_report')
     """Создаёт и отправляет ежедневный отчёт, сохраняет PDF."""
     try:
         today = timezone.now().date()
@@ -96,9 +97,9 @@ def generate_daily_report(self):
         orders_items_count = orders_today.count()
 
         report_message = (
-            f"Ежедневный отчёт за {today}:\n"
-            f"- Товаров добавлено в корзины: {carts_items_count}\n"
-            f"- Заказов создано: {orders_items_count}"
+            f"Daily report for {today}:\n"
+            f"- Things in carts: {carts_items_count}\n"
+            f"- Amount of orders: {orders_items_count}"
         )
 
         if settings.DEBUG:
@@ -119,7 +120,7 @@ def generate_daily_report(self):
 
         c = canvas.Canvas(pdf_path, pagesize=letter)
         c.setFont("Helvetica-Bold", 16)
-        c.drawString(100, letter[1] - 100, f"Ежедневный отчёт за {today}")
+        c.drawString(100, letter[1] - 100, f"Daily report for {today}")
         c.setFont("Helvetica", 12)
         text = c.beginText(100, letter[1] - 150)
         for line in report_message.split('\n'):
@@ -172,6 +173,7 @@ def send_batch_emails(self, message_template, subject, batch_user_ids, from_emai
 @shared_task
 def send_mass_notifications(message, subject, user_ids=None, batch_size=BATCH_SIZE, delay=DELAY_BETWEEN_BATCHES, dry_run=False):
     """Запускает массовую рассылку уведомлений с разбивкой на батчи."""
+    print('send_mass_notifications')
     try:
         if user_ids is None:
             user_ids = list(
@@ -212,6 +214,7 @@ def send_mass_notifications(message, subject, user_ids=None, batch_size=BATCH_SI
 
 @shared_task(bind=True, rate_limit='10/m', max_retries=3, retry_backoff=True)
 def send_daily_discounts(self):
+    print('send_daily_discounts')
     """Отправляет уведомления о скидках на товары."""
     try:
         products = Products.objects.filter(discount__gt=0)
@@ -220,9 +223,9 @@ def send_daily_discounts(self):
             return "Нет товаров со скидками для рассылки"
 
         users = User.objects.filter(
-            is_active=True,
+            # is_active=True,
             email__isnull=False,
-            subscription__is_subscribed=True
+            # subscription__is_subscribed=True
         ).select_related('subscription')
         num_users = users.count()
         if num_users == 0:
@@ -278,51 +281,107 @@ from django.conf import settings
 from users.models import User
 from orders.models import Order
 import logging
+from django.contrib.auth import get_user_model
 
 logger = logging.getLogger('notifications.tasks')
 
-@shared_task(bind=True, rate_limit='10/m', max_retries=3, retry_backoff=True)
-def send_order_confirmation(self, order_id, user_id):
-    """Отправляет письмо с подтверждением заказа пользователю."""
-    try:
-        user = User.objects.get(id=user_id, is_active=True, email__isnull=False)
-        order = Order.objects.get(id=order_id)
-        
-        if not hasattr(user, 'subscription') or not user.subscription.is_subscribed:
-            logger.info(f"Пользователь {user.username} не подписан на уведомления")
-            return f"Не отправлено: пользователь {user.id} не подписан"
 
-        base_url = getattr(settings, 'BASE_URL', 'http://localhost:8000')
-        html_content = render_to_string('email/order_confirmation.html', {
-            'user': user,
-            'order': order,
-            'base_url': base_url,
-            'year': timezone.now().year,
+
+
+
+
+
+
+User = get_user_model()
+
+@shared_task
+def send_abandoned_cart_reminder():
+    print('send_abandoned_cart_reminder')
+    # Calculate the time 5 days ago from now
+    five_days_ago = timezone.now() - timedelta(days=5)
+    
+    # Find carts that haven't been updated in 5 days
+    abandoned_carts = Cart.objects.filter(
+        created_timestamp__lte=five_days_ago,
+        user__isnull=False  # Only carts associated with users
+    ).select_related('user', 'product').distinct('user')
+
+    for cart in abandoned_carts:
+        user = cart.user
+        # Get all carts for this user
+        user_carts = Cart.objects.filter(user=user).select_related('product')
+        
+        # Prepare email context
+        cart_items = [
+            {
+                'product_name': item.product.name,
+                'quantity': item.quantity,
+                'image_url': f"{settings.BASE_URL}{item.product.image.url}" if item.product.image else None
+            }
+            for item in user_carts
+        ]
+        
+        # Render email template
+        subject = f"{user.username}, Вы забыли товары в корзине!"
+        message = render_to_string('email/abandoned_cart.html', {
+            'username': user.username,
+            'cart_items': cart_items,
+            'base_url': settings.BASE_URL,
         })
-        plain_content = strip_tags(html_content)
         
-        email = EmailMultiAlternatives(
-            subject=f'Подтверждение заказа #{order.id}',
-            body=plain_content,
+        # Send email
+        send_mail(
+            subject=subject,
+            message='',
+            html_message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[user.email]
+            recipient_list=[user.email],
+            fail_silently=False,
         )
-        email.attach_alternative(html_content, "text/html")
 
-        if settings.DEBUG:
-            logger.info(f"DEBUG=True: Симуляция отправки письма о заказе {order.id} для {user.email}")
-            return f"Симуляция отправки письма для заказа {order.id}"
 
-        email.send()
-        logger.info(f"Письмо о заказе {order.id} отправлено пользователю {user.email}")
-        return f"Письмо отправлено для заказа {order.id}"
+# @shared_task(bind=True, rate_limit='10/m', max_retries=3, retry_backoff=True)
+# def send_order_confirmation(self, order_id, user_id):
+#     """Отправляет письмо с подтверждением заказа пользователю."""
+#     try:
+#         user = User.objects.get(id=user_id, email__isnull=False)
+#         order = Order.objects.get(id=order_id)
+        
+#         if not hasattr(user, 'subscription') or not user.subscription.is_subscribed:
+#             logger.info(f"Пользователь {user.username} не подписан на уведомления")
+#             return f"Не отправлено: пользователь {user.id} не подписан"
 
-    except User.DoesNotExist:
-        logger.error(f"Пользователь с ID {user_id} не найден")
-        return f"Ошибка: пользователь {user_id} не найден"
-    except Order.DoesNotExist:
-        logger.error(f"Заказ с ID {order_id} не найден")
-        return f"Ошибка: заказ {order_id} не найден"
-    except Exception as exc:
-        logger.error(f"Ошибка в send_order_confirmation для заказа {order_id}: {exc}", exc_info=True)
-        self.retry(exc=exc, countdown=300)
+#         base_url = getattr(settings, 'BASE_URL', 'http://localhost:8000')
+#         html_content = render_to_string('email/order_confirmation.html', {
+#             'user': user,
+#             'order': order,
+#             'base_url': base_url,
+#             'year': timezone.now().year,
+#         })
+#         plain_content = strip_tags(html_content)
+        
+#         email = EmailMultiAlternatives(
+#             subject=f'Подтверждение заказа #{order.id}',
+#             body=plain_content,
+#             from_email=settings.DEFAULT_FROM_EMAIL,
+#             to=[user.email]
+#         )
+#         email.attach_alternative(html_content, "text/html")
+
+#         if settings.DEBUG:
+#             logger.info(f"DEBUG=True: Симуляция отправки письма о заказе {order.id} для {user.email}")
+#             return f"Симуляция отправки письма для заказа {order.id}"
+
+#         email.send()
+#         logger.info(f"Письмо о заказе {order.id} отправлено пользователю {user.email}")
+#         return f"Письмо отправлено для заказа {order.id}"
+
+#     except User.DoesNotExist:
+#         logger.error(f"Пользователь с ID {user_id} не найден")
+#         return f"Ошибка: пользователь {user_id} не найден"
+#     except Order.DoesNotExist:
+#         logger.error(f"Заказ с ID {order_id} не найден")
+#         return f"Ошибка: заказ {order_id} не найден"
+#     except Exception as exc:
+#         logger.error(f"Ошибка в send_order_confirmation для заказа {order_id}: {exc}", exc_info=True)
+#         self.retry(exc=exc, countdown=300)

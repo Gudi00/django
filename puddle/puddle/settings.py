@@ -17,7 +17,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
-
+from celery.schedules import crontab    
 from django.conf.global_settings import (
     AUTH_USER_MODEL,
     LOGIN_URL,
@@ -43,35 +43,71 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Celery settings
 # Celery settings
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://127.0.0.1:6379/0')
+# CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
+# CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
 CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Europe/Moscow"
 
 CELERY_BEAT_SCHEDULE = {
-    "send-daily-notifications": {  # Твоя предыдущая задача
-        "task": "notifications.tasks.send_daily_notifications",
-        "schedule": {"type": "crontab", "hour": 12, "minute": 0},
+    # 'send-daily-notifications': {
+    #     'task': 'notifications.tasks.send_daily_notifications',
+    #     'schedule': crontab(hour=12, minute=0),
+    # },
+    # 'generate-daily-report': {
+    #     'task': 'reports.tasks.generate_daily_report',
+    #     'schedule': crontab(hour=20, minute=22),
+    # },
+    # 'cleanup-abandoned-carts': {
+    #     'task': 'reports.tasks.cleanup_abandoned_carts',
+    #     'schedule': crontab(hour=1, minute=0),
+    # },
+    'send-daily-discounts': {
+        'task': 'notifications.tasks.send_daily_discounts',
+        # 'schedule': crontab(hour=9, minute=0),  # Reverted to 9:00 for production
+        'schedule': crontab(minute='*/1'),  # Uncomment for testing
     },
-    "generate-daily-report": {
-        "task": "reports.tasks.generate_daily_report",
-        "schedule": {"type": "crontab", "hour": 20, "minute": 22},  # Полночь
-    },
-    "cleanup-abandoned-carts": {
-        "task": "reports.tasks.cleanup_abandoned_carts",
-        "schedule": {
-            "type": "crontab",
-            "hour": 1,
-            "minute": 0,
-        },  # 01:00, чтобы не конфликтовать
-    },
-    "send-daily-discounts": {
-        "task": "notifications.tasks.send_daily_discounts",
-        "schedule": {"type": "crontab", "hour": 9, "minute": 0},  # Каждый день в 9:00
-    },
+    # 'send-abandoned-cart-reminder': {
+    #     'task': 'notifications.tasks.send_abandoned_cart_reminder',
+    #     # 'schedule': crontab(hour=13, minute=5),
+    #     'schedule': crontab(minute='*/1'),  # Uncomment for testing
+    # },
 }
+
+# CELERY_BEAT_SCHEDULE = {
+#     "send-daily-notifications": {  # Твоя предыдущая задача
+#         "task": "notifications.tasks.send_daily_notifications",
+#         "schedule": {"type": "crontab", "hour": 12, "minute": 0},
+#     },
+#     "generate-daily-report": {
+#         "task": "reports.tasks.generate_daily_report",
+#         # "schedule": {"type": "crontab", "hour": 20, "minute": 22},  # Полночь
+#         "schedule": {"type": "crontab", "minute": '*/1'},  # Полночь
+#     },
+#     "cleanup-abandoned-carts": {
+#         "task": "reports.tasks.cleanup_abandoned_carts",
+#         "schedule": {
+#             "type": "crontab",
+#             "hour": 1,
+#             "minute": 0,
+#         },  # 01:00, чтобы не конфликтовать
+#     },
+#     "send-daily-discounts": {
+#         "task": "notifications.tasks.send_daily_discounts",
+#         # "schedule": {"type": "crontab", "hour": 9, "minute": 0},  # Каждый день в 9:00
+#         "schedule": {"type": "crontab", "minute": '*/1'},  # Полночь
+
+#     },
+#         'send-abandoned-cart-reminder': {
+#         'task': 'notifications.tasks.send_abandoned_cart_reminder',
+#         # 'schedule': {"type": "crontab", "hour": 13, "minute": 5},
+#         'schedule': crontab(minute='*/1'),  # Полночь
+
+#     },
+# }
 # {'type': 'crontab', 'minute': '*/5'}
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -135,6 +171,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
+
     "django_celery_beat",
     
     "main",
