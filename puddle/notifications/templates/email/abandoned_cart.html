@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Напоминание о корзине</title>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f8f8; padding: 10px; text-align: center; }
+        .item { margin: 10px 0; }
+        .item img { max-width: 100px; height: auto; }
+        .button { background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Здравствуйте, {{ username }}!</h2>
+            <p>Вы оставили товары в корзине. Завершите покупку сейчас!</p>
+        </div>
+        <h3>Ваши товары:</h3>
+        {% for item in cart_items %}
+            <div class="item">
+                <p><strong>{{ item.product_name }}</strong> - Количество: {{ item.quantity }}</p>
+                {% if item.image_url %}
+                    <img src="{{ item.image_url }}" alt="{{ item.product_name }}">
+                {% else %}
+                    <p>Изображение недоступно</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <p><a href="{{ base_url }}/cart/" class="button">Перейти в корзину</a></p>
+        <p>С уважением,<br>Команда Puddle</p>
+    </div>
+</body>
+</html>

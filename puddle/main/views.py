@@ -7,6 +7,7 @@ from goods.models import Categories
 
 
 class IndexView(TemplateView):
+    
     template_name = 'main/index.html'
 
     def get_context_data(self, **kwargs):
@@ -24,5 +25,6 @@ class AboutView(TemplateView):
         context['title'] = 'Home - О нас'
         context['content'] = "О нас"
         context['text_on_page'] = "Текст о том почему этот магазин такой классный, и какой хороший товар."
+        
         return context
     

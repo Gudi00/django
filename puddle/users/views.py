@@ -19,7 +19,7 @@ class UserLoginView(LoginView):
     template_name = 'users/login.html'
     form_class = UserLoginForm
     # success_url = reverse_lazy('main:index')
-
+    
     def get_success_url(self):
         redirect_page = self.request.POST.get('next', None)
         if redirect_page and redirect_page != reverse('user:logout'):

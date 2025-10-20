@@ -11,7 +11,7 @@ from carts.models import Cart
 
 from orders.forms import CreateOrderForm
 from orders.models import Order, OrderItem
-from notifications.tasks import send_order_confirmation
+# from notifications.tasks import send_order_confirmation
 
 class CreateOrderView(LoginRequiredMixin, FormView):
     template_name = 'orders/create_order.html'
