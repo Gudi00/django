@@ -29,7 +29,7 @@ RUN chmod +x entrypoint.sh
 FROM base AS production
 
 # Create non-root user for security
-RUN useradd -m appuser
+RUN useradd -m appuser && chown -R appuser:appuser $APP_HOME
 USER appuser
 
 # Expose port for Django
