@@ -173,6 +173,11 @@ def mark_orders_paid(modeladmin: admin.ModelAdmin, request: HttpRequest, queryse
     queryset.update(is_paid=True)
 
 
+@admin.register(Products, site=ops_admin_site)
+class OpsProductAdmin(admin.ModelAdmin):
+    search_fields = ("name",)
+
+
 @admin.register(Order, site=ops_admin_site)
 class OpsOrderAdmin(admin.ModelAdmin):
     change_form_template = "custom_admin/admin/change_form.html"
