@@ -237,3 +237,9 @@ local/
 # logs & secrets (added)
 puddle/logs/
 *.log
+
+# AI-ассистенты (Gemini CLI, Claude Code и пр.) — не пушим артефакты/креды
+.gemini/
+.claude/
+.cursor/
+.aider*
