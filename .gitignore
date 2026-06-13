@@ -233,3 +233,7 @@ cache/
 # Local development files
 local/
 .local/
+
+# logs & secrets (added)
+puddle/logs/
+*.log

@@ -14,22 +14,19 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from os import name
 from django.contrib import admin
-from django.urls import include, path
-from django.conf.urls.static import static
+from django.urls import include, path, re_path
 from django.conf import settings
+from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from puddle.admin_sites import ops_admin_site, staff_admin_site
-
-DEBUG = 1
 
 urlpatterns = [
     # Admin
     path('admin/', admin.site.urls),
     path('staff-admin/', staff_admin_site.urls),
     path('ops-admin/', ops_admin_site.urls),
-    
+
     # Web URLs
     path('', include('main.urls', namespace='main')),
     path('catalog/', include('goods.urls', namespace='catalog')),
@@ -37,23 +34,17 @@ urlpatterns = [
     path('cart/', include('carts.urls', namespace='cart')),
     path('orders/', include('orders.urls', namespace='orders')),
     path('notifications/', include('notifications.urls')),
-    
+
     # API URLs
     path('api/v1/', include('api_urls')),
-    
+
     # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 
-if settings.DEBUG: 
-    # urlpatterns += [
-    #     path('__debug__/', include('debug_toolbar.urls')),
-        
-    #     ]
-    # Serve static files in development
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    
-    # Serve media files in development
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files via Django (no nginx in this setup)
+urlpatterns += [
+    re_path(r'^m/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+]

@@ -220,6 +220,11 @@ class OpsOrderItemAdmin(admin.ModelAdmin):
         return qs.select_related("order", "product")
 
 
+@admin.register(Products, site=ops_admin_site)
+class OpsProductAdmin(admin.ModelAdmin):
+    search_fields = ("name",)
+
+
 @admin.register(Cart, site=ops_admin_site)
 class OpsCartAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "product", "quantity", "session_key", "created_timestamp")
